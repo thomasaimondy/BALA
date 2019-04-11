@@ -1,5 +1,8 @@
 # BALNN
-Brain-inspired Adaptive Learning NN in Baxter robot
+Brain-inspired Adaptive Learning NN in Baxter robot:
+
+paper name is :
+paper link is:
 
 Running the CNN-RNN with:
 ```bash
