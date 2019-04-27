@@ -11,6 +11,7 @@ import nltk
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
+filt = 10 # don't calculate the nodes frequencey < filt
 def getEnglishwords(readcsvpath):
     csv_data = pd.read_csv(readcsvpath, sep=',')
     # ipdb.set_trace()
@@ -21,6 +22,7 @@ def getEnglishwords(readcsvpath):
     # nodes
     nodes_id = []
     nodes_modularity = []
+    nodes_times = {}
     noun_count = 0;
     verb_count = 0;
     for sent in sentences:
@@ -30,6 +32,12 @@ def getEnglishwords(readcsvpath):
         except:
             continue
         for word in words:
+            # calculate times
+            if word[0] in nodes_times.keys():
+                nodes_times[word[0]]  = nodes_times[word[0]] +1
+            else:
+                nodes_times[word[0]] = 1
+
             if word[0] in nodes_id: # word[0] is A, word[1] is DT
                 continue
             # Word vector of nouns ['NN','NNS','NNPS'] 
@@ -39,6 +47,7 @@ def getEnglishwords(readcsvpath):
             # NNS Noun, plural
             # NNP Proper noun, singular
             # NNPS    Proper noun, plural
+
 
             # VB  Verb, base form
             # VBD Verb, past tense
@@ -76,8 +85,13 @@ def getEnglishwords(readcsvpath):
                     continue
                 w_from = words[i]
                 w_to = words[j]
+
+                if nodes_times[w_from[0]] < filt or  nodes_times[w_to[0]] < filt:  # filter freguqence
+                    continue
+
                 if w_from[0] not in nodes_id or  w_to[0] not in nodes_id:
                     continue
+
                 # both w_from and w_to are nouns or verbs
                 key = (w_from[0] , w_to[0])
                 if key in connections:
@@ -90,7 +104,7 @@ def getEnglishwords(readcsvpath):
 
 
     df = pd.DataFrame({"Source":conn_source, "Target":conn_tar, "Weight":conn_weight})
-    df.to_csv('connections.csv')
+    df.to_csv('connections_filt_'+str(filt)+'.csv')
 
 
 
