@@ -11,7 +11,7 @@ import nltk
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
-filt = 10 # don't calculate the nodes frequencey < filt
+
 def getEnglishwords(readcsvpath):
     csv_data = pd.read_csv(readcsvpath, sep=',')
     # ipdb.set_trace()
@@ -21,10 +21,13 @@ def getEnglishwords(readcsvpath):
     
     # nodes
     nodes_id = []
+    nodes_label = []
     nodes_modularity = []
+    nodes_map = {}
     nodes_times = {}
-    noun_count = 0;
-    verb_count = 0;
+    count = 0
+    noun_count = 0
+    verb_count = 0
     for sent in sentences:
         try:
             text1 = nltk.word_tokenize(sent)
@@ -38,7 +41,7 @@ def getEnglishwords(readcsvpath):
             else:
                 nodes_times[word[0]] = 1
 
-            if word[0] in nodes_id: # word[0] is A, word[1] is DT
+            if word[0] in nodes_label: # word[0] is A, word[1] is DT
                 continue
             # Word vector of nouns ['NN','NNS','NNPS'] 
             # Word vector of verbs ['VB','VBD','VBG','VBN','VBP','VBZ']
@@ -58,17 +61,24 @@ def getEnglishwords(readcsvpath):
 
 
             if word[1] in ['NN','NNS','NNPS']:
-                nodes_id.append(word[0])
+                nodes_id.append(count)
+                nodes_label.append(word[0])
                 nodes_modularity.append(word[1])
                 noun_count = noun_count + 1 
+                count = count + 1
+                nodes_map[word[0]]=count
+
             if word[1] in ['VB','VBD','VBG','VBN','VBP','VBZ']:
-                nodes_id.append(word[0])
+                nodes_id.append(count)
+                nodes_label.append(word[0])
                 nodes_modularity.append(word[1])
                 verb_count = verb_count + 1
+                count = count + 1
+                nodes_map[word[0]]=count
 
     print('The nount number is : ' + str(noun_count));
     print('The verb number is : ' + str(verb_count));
-    df = pd.DataFrame({"id":nodes_id, "label":nodes_id, "modularity_class":nodes_modularity})
+    df = pd.DataFrame({"id":nodes_id, "label":nodes_label, "modularity_class":nodes_modularity})
     df.to_csv('nodes.csv')
 
     # connections
@@ -86,14 +96,11 @@ def getEnglishwords(readcsvpath):
                 w_from = words[i]
                 w_to = words[j]
 
-                if nodes_times[w_from[0]] < filt or  nodes_times[w_to[0]] < filt:  # filter freguqence
-                    continue
-
-                if w_from[0] not in nodes_id or  w_to[0] not in nodes_id:
+                if w_from[0] not in nodes_map.keys() or  w_to[0] not in nodes_map.keys():
                     continue
 
                 # both w_from and w_to are nouns or verbs
-                key = (w_from[0] , w_to[0])
+                key = (nodes_map[w_from[0]] ,nodes_map[w_to[0]])
                 if key in connections:
                     connections[key] = connections[key] +1
                 else:
@@ -104,7 +111,7 @@ def getEnglishwords(readcsvpath):
 
 
     df = pd.DataFrame({"Source":conn_source, "Target":conn_tar, "Weight":conn_weight})
-    df.to_csv('connections_filt_'+str(filt)+'.csv')
+    df.to_csv('connections.csv')
 
 
 
